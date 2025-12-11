@@ -2,11 +2,12 @@
 
 using namespace std;
 #define max 20
+
+template<typename T>
 class Queue{
     public:
-    int front;
-    int rear;
-    int arr[max];
+    int front, rear;
+    T arr[max];
 
     Queue():front(-1),rear(-1){}
 
@@ -17,23 +18,23 @@ class Queue{
         return rear==max-1;
     }
 
-    int getFront(){
+    T getFront(){
         if(isEmpty()){
             cout<<"Empty"<<endl;
-            return -1;
+            return T();
         }
         return arr[front];
     }
-    int getRear(){
+    T getRear(){
         if(isEmpty()){
             cout<<"Empty"<<endl;
-            return -1;
+            return T();
         }
         return arr[rear];
     }
 
 
-    void enqueue(int val){
+    void enqueue(T val){
         if (isFull()){
             cout<<"full"<<endl;
             return;
@@ -49,9 +50,9 @@ class Queue{
     {
         if(isEmpty()){
             cout<<"empty"<<endl;
-            return -1;
+            return T();
         }
-        int data=arr[front];
+        T data=arr[front];
         front++;
         if (isEmpty()){
             front=rear=-1;
@@ -75,47 +76,39 @@ class Queue{
 };
 
 
-int main()
-{
-    // Created Queue of size 5
-    Queue q;
+class Vehicle {
+    public:
+    int id;
+    int spawntime;
 
-    // Enqueueing elements
-    q.enqueue(1);
-    q.enqueue(2);
-    q.enqueue(3);
+    Vehicle(int id=-1,int s=0):id(id),spawntime(s){}
+};
 
-    // Displaying status of the queue after enqueuing
-    cout << "\nAfter Enqueueing:" << endl;
+class Lane {
+public:
+    string name;
+    bool isPriority;
+    Queue<Vehicle> vehicleQ;
 
-    cout << "Front element: " << q.getFront() << endl;
-    cout << "Rear element: " << q.getRear() << endl;
+    Lane(string name = "", bool priority=false)
+        : name(name), isPriority(priority) {}
+};
 
-    q.display();
 
-    // Enqueueing more elements
-    q.enqueue(4);
-    q.enqueue(5);
+class VehicleQueue : public Queue<Vehicle> {};
 
-    // Displaying the updated queue
-    q.display();
+class LaneQueue : public Queue<Lane> {};
 
-    // Enqueueing one more element to demonstrate overflow
-    // condition
-    q.enqueue(6);
 
-    // Dequeueing elements
-    cout << "\nDequeueing elements:" << endl;
-    cout << "Dequeued element: " << q.dequeue() << endl;
-    cout << "Dequeued element: " << q.dequeue() << endl;
+int main(){
+    VehicleQueue vq;
+    vq.enqueue(Vehicle(1, 10));
+    vq.enqueue(Vehicle(2, 12));
 
-    // Displaying status of the queue after dequeueing
-    cout << "\nAfter Dequeueing:" << endl;
+    cout << vq.getRear().id << endl;   
 
-    cout << "Front element: " << q.getFront() << endl;
-    cout << "Rear element: " << q.getRear() << endl;
 
-    q.display();
+
 
     return 0;
 }
