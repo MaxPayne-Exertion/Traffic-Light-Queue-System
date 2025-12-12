@@ -15,3 +15,6 @@ current one has an id generator which produces an 8lenght alpha numeric vehicle 
 
 road representation:
 reperesentation of the road using SDL, the 4 roads each with 3 lanes
+
+current status of render:
+<img width="828" height="866" alt="image" src="https://github.com/user-attachments/assets/3c9a0eab-7e31-4fad-b76f-dc6df9c4ea46" />
