@@ -46,7 +46,7 @@ class Queue{
         arr[rear]=val;
 
     }
-    int dequeue()
+    T dequeue()
     {
         if(isEmpty()){
             cout<<"empty"<<endl;
