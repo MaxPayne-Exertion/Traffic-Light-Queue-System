@@ -18,3 +18,12 @@ reperesentation of the road using SDL, the 4 roads each with 3 lanes
 
 current status of render:
 <img width="828" height="866" alt="image" src="https://github.com/user-attachments/assets/3c9a0eab-7e31-4fad-b76f-dc6df9c4ea46" />
+
+
+
+all files have been edited to fit the final goal of the simulation:
+addition of priority queue and fixing the parameters of vehicle class
+a basic rundown of the simulator that works on the terminal
+addition of spawntime in the traffic generator
+
+the window generator will be merged in the simulator
