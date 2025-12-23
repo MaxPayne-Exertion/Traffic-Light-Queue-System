@@ -1,5 +1,5 @@
 #include <fstream>
-
+#include <thread>
 #include <chrono>
 #include <cstdlib>
 #include <ctime>
@@ -39,8 +39,14 @@ int main() {
            std::ofstream file(filename, std::ios::app);
            if (file.is_open()) {
                file <<vehicle_id<<" "<<spawn_time<< "\n";
+               file.close();
            }
+
+           // Random delay between 300-1500ms
+           int delay = 300 + (rand() % 1200);
+           std::this_thread::sleep_for(std::chrono::milliseconds(delay));
        }
 
        return 0;
    }
+
