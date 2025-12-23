@@ -92,13 +92,23 @@ class Vehicle {
     Vehicle(int id=-1,int s=0):id(id),spawntime(s){}
 };
 
+class Vehicle {
+    public:
+    string id;
+    long spawntime;
+
+    Vehicle(string id="-1",long s=0):id(id),spawntime(s){}
+    bool operator==(const Vehicle& other) const {
+        return id == other.id;}
+};
+
 class Lane {
 public:
     string name;
-    bool isPriority;
+    int isPriority;
     Queue<Vehicle> vehicleQ;
 
-    Lane(string name = "", bool priority=false)
+    Lane(string name = "", int priority=0)
         : name(name), isPriority(priority) {}
 };
 
@@ -106,17 +116,3 @@ public:
 class VehicleQueue : public Queue<Vehicle> {};
 
 class LaneQueue : public Queue<Lane> {};
-
-
-int main(){
-    VehicleQueue vq;
-    vq.enqueue(Vehicle(1, 10));
-    vq.enqueue(Vehicle(2, 12));
-
-    cout << vq.getRear().id << endl;   
-
-
-
-
-    return 0;
-}
