@@ -1,108 +1,51 @@
 #include <iostream>
 #include <string>
 #include <vector>
+
 using namespace std;
-#define max 20
+#define MAX_SIZE 50
 
 template<typename T>
-class Queue{
-    public:
+class Queue {
+public:
     int front, rear;
-    T arr[max];
+    T arr[MAX_SIZE];
 
-    Queue():front(-1),rear(-1){}
+    Queue() : front(-1), rear(-1) {}
 
-    bool isEmpty(){
-        return front==-1||front>rear;
-    }
-    bool isFull(){
-        return rear==max-1;
-    }
+    bool isEmpty() { return front == -1 || front > rear; }
+    bool isFull() { return rear == MAX_SIZE - 1; }
 
-    T getFront(){
-        if(isEmpty()){
-            cout<<"Empty"<<endl;
-            return T();
-        }
-        return arr[front];
-    }
-    T getRear(){
-        if(isEmpty()){
-            cout<<"Empty"<<endl;
-            return T();
-        }
-        return arr[rear];
-    }
-
-
-    void enqueue(T val){
-        if (isFull()){
-            cout<<"full"<<endl;
-            return;
-        }
-        if (isEmpty()){
-            front=0;
-        }
+    void enqueue(T val) {
+        if (isFull()) return;
+        if (isEmpty()) front = 0;
         rear++;
-        arr[rear]=val;
-
+        arr[rear] = val;
     }
-    T dequeue()
-    {
-        if(isEmpty()){
-            cout<<"empty"<<endl;
-            return T();
-        }
-        T data=arr[front];
+
+    T dequeue() {
+        if (isEmpty()) return T();
+        T data = arr[front];
         front++;
-        if (isEmpty()){
-            front=rear=-1;
-        }
+        if (isEmpty()) front = rear = -1;
         return data;
     }
 
-
     int size() {
-        if (isEmpty()) {
-            return 0;
-        }
+        if (isEmpty()) return 0;
         return rear - front + 1;
     }
-
-
-    void display()
-    {
-        if (isEmpty()) {
-            cout << "Queue is empty" << endl;
-            return;
-        }
-        cout << "Queue:  ";
-        for (int i = front; i <= rear; i++) {
-            cout << arr[i] << " ";
-        }
-
-        cout << endl;
-    }
-    void clear() {
-        front = rear = -1;
-    }
-
-    bool contains(T value) {
-        for (int i = front; i <= rear; i++) {
-            if (arr[i] == value) return true;
-        }}
-
 };
-// Priority Queue for lanes
+
 class PriorityQueue {
 private:
-    struct LanePriority {
+    struct Item {
         int laneIndex;
         int priority;
-        LanePriority(int idx, int p) : laneIndex(idx), priority(p) {}
+        Item(int idx, int p) : laneIndex(idx), priority(p) {}
     };
 
-    vector<LanePriority> heap;
+    vector<Item> heap;
 
     void heapifyUp(int index) {
         while (index > 0) {
@@ -137,7 +80,7 @@ public:
     PriorityQueue() {}
 
     void insert(int laneIndex, int priority) {
-        heap.push_back(LanePriority(laneIndex, priority));
+        heap.push_back(Item(laneIndex, priority));
         heapifyUp(heap.size() - 1);
     }
 
@@ -153,7 +96,6 @@ public:
     }
 
     void updatePriority(int laneIndex, int newPriority) {
-        // Find the lane
         for (int i = 0; i < heap.size(); i++) {
             if (heap[i].laneIndex == laneIndex) {
                 int oldPriority = heap[i].priority;
@@ -164,7 +106,6 @@ public:
                 return;
             }
         }
-        // If not found, insert it
         insert(laneIndex, newPriority);
     }
 
@@ -174,11 +115,8 @@ public:
         }
         return 0;
     }
-
-    bool isEmpty() { return heap.empty(); }
 };
 
-// Vehicle class
 class Vehicle {
 public:
     string id;
@@ -187,7 +125,6 @@ public:
     Vehicle(string id = "", long ts = 0) : id(id), timestamp(ts) {}
 };
 
-// Lane class
 class Lane {
 public:
     string name;
