@@ -33,8 +33,8 @@ public:
         // Initialize lanes
         lanes[0] = Lane("AL2");
         lanes[1] = Lane("BL2");
-        lanes[2] = Lane("CL3");
-        lanes[3] = Lane("DL4");
+        lanes[2] = Lane("CL2");
+        lanes[3] = Lane("DL2");
 
         // Initialize priority queue
         for (int i = 0; i < LANES; i++) {
@@ -254,60 +254,110 @@ public:
 
         SDL_RenderPresent(renderer);
     }
-
     void drawRoads() {
-        // Vertical road
-        SDL_SetRenderDrawColor(renderer, 80, 80, 80, 255);
-        SDL_Rect verticalRoad = {WINDOW_WIDTH/2 - ROAD_WIDTH/2, 0, ROAD_WIDTH, WINDOW_HEIGHT};
+        // Clear to light gray background
+        SDL_SetRenderDrawColor(renderer, 240, 240, 240, 255);
+        SDL_RenderClear(renderer);
+
+        // Center the roads in the window
+        int roadCenterX = WINDOW_WIDTH / 2;
+        int roadCenterY = WINDOW_HEIGHT / 2;
+
+        // Vertical road - centered
+        SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);  // Dark gray for road
+        SDL_Rect verticalRoad = {
+            roadCenterX - ROAD_WIDTH / 2,
+            0,
+            ROAD_WIDTH,
+            WINDOW_HEIGHT
+        };
         SDL_RenderFillRect(renderer, &verticalRoad);
 
-        // Horizontal road
-        SDL_Rect horizontalRoad = {0, WINDOW_HEIGHT/2 - ROAD_WIDTH/2, WINDOW_WIDTH, ROAD_WIDTH};
+        // Horizontal road - centered
+        SDL_Rect horizontalRoad = {
+            0,
+            roadCenterY - ROAD_WIDTH / 2,
+            WINDOW_WIDTH,
+            ROAD_WIDTH
+        };
         SDL_RenderFillRect(renderer, &horizontalRoad);
 
-        // Lane dividers (white dashed lines)
+        // Draw solid lane dividers (white solid lines) instead of dashes
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
-        // Calculate lane center positions
-        int laneCenters[3];
-        for (int i = 0; i < 3; i++) {
-            laneCenters[i] = WINDOW_WIDTH/2 - ROAD_WIDTH/2 + (i * LANE_WIDTH) + LANE_WIDTH/2;
+        // Calculate lane positions (3 lanes per road)
+        int laneSpacing = ROAD_WIDTH / 3;
+
+        // Vertical road lane dividers (solid lines)
+        for (int i = 1; i < 3; i++) {
+            int laneX = roadCenterX - ROAD_WIDTH / 2 + i * laneSpacing;
+            // Top segment
+            SDL_RenderDrawLine(renderer, laneX, 0, laneX, roadCenterY - ROAD_WIDTH / 2);
+            // Bottom segment
+            SDL_RenderDrawLine(renderer, laneX, roadCenterY + ROAD_WIDTH / 2, laneX, WINDOW_HEIGHT);
         }
 
-        // Vertical road lane markers
-        for (int i = 0; i < 3; i++) {
-            int laneX = laneCenters[i];
-
-            // Top section (before intersection)
-            for (int y = 20; y < WINDOW_HEIGHT/2 - ROAD_WIDTH/2 - 20; y += 40) {
-                SDL_RenderDrawLine(renderer, laneX, y, laneX, y + 20);
-            }
-
-            // Bottom section (after intersection)
-            for (int y = WINDOW_HEIGHT/2 + ROAD_WIDTH/2 + 20; y < WINDOW_HEIGHT - 20; y += 40) {
-                SDL_RenderDrawLine(renderer, laneX, y, laneX, y + 20);
-            }
+        // Horizontal road lane dividers (solid lines)
+        for (int i = 1; i < 3; i++) {
+            int laneY = roadCenterY - ROAD_WIDTH / 2 + i * laneSpacing;
+            // Left segment
+            SDL_RenderDrawLine(renderer, 0, laneY, roadCenterX - ROAD_WIDTH / 2, laneY);
+            // Right segment
+            SDL_RenderDrawLine(renderer, roadCenterX + ROAD_WIDTH / 2, laneY, WINDOW_WIDTH, laneY);
         }
 
-        // Horizontal road lane markers
-        for (int i = 0; i < 3; i++) {
-            int laneY = WINDOW_HEIGHT/2 - ROAD_WIDTH/2 + (i * LANE_WIDTH) + LANE_WIDTH/2;
+        // Draw intersection area (darker)
+        SDL_SetRenderDrawColor(renderer, 40, 40, 40, 255);
+        SDL_Rect intersection = {
+            roadCenterX - ROAD_WIDTH / 2,
+            roadCenterY - ROAD_WIDTH / 2,
+            ROAD_WIDTH,
+            ROAD_WIDTH
+        };
+        SDL_RenderFillRect(renderer, &intersection);
 
-            // Left section
-            for (int x = 20; x < WINDOW_WIDTH/2 - ROAD_WIDTH/2 - 20; x += 40) {
-                SDL_RenderDrawLine(renderer, x, laneY, x + 20, laneY);
-            }
+        // Draw stop lines before intersection
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        int stopLineOffset = 50; // Distance from intersection
 
-            // Right section
-            for (int x = WINDOW_WIDTH/2 + ROAD_WIDTH/2 + 20; x < WINDOW_WIDTH - 20; x += 40) {
-                SDL_RenderDrawLine(renderer, x, laneY, x + 20, laneY);
-            }
-        }
+        // Top stop line
+        SDL_RenderDrawLine(renderer,
+            roadCenterX - ROAD_WIDTH / 2 + laneSpacing,
+            roadCenterY - ROAD_WIDTH / 2 - stopLineOffset,
+            roadCenterX - ROAD_WIDTH / 2 + 2 * laneSpacing,
+            roadCenterY - ROAD_WIDTH / 2 - stopLineOffset);
+
+        // Right stop line
+        SDL_RenderDrawLine(renderer,
+            roadCenterX + ROAD_WIDTH / 2 + stopLineOffset,
+            roadCenterY - ROAD_WIDTH / 2 + laneSpacing,
+            roadCenterX + ROAD_WIDTH / 2 + stopLineOffset,
+            roadCenterY - ROAD_WIDTH / 2 + 2 * laneSpacing);
+
+        // Bottom stop line
+        SDL_RenderDrawLine(renderer,
+            roadCenterX - ROAD_WIDTH / 2 + laneSpacing,
+            roadCenterY + ROAD_WIDTH / 2 + stopLineOffset,
+            roadCenterX - ROAD_WIDTH / 2 + 2 * laneSpacing,
+            roadCenterY + ROAD_WIDTH / 2 + stopLineOffset);
+
+        // Left stop line
+        SDL_RenderDrawLine(renderer,
+            roadCenterX - ROAD_WIDTH / 2 - stopLineOffset,
+            roadCenterY - ROAD_WIDTH / 2 + laneSpacing,
+            roadCenterX - ROAD_WIDTH / 2 - stopLineOffset,
+            roadCenterY - ROAD_WIDTH / 2 + 2 * laneSpacing);
     }
 
     void drawLaneLabels() {
-        // Lane positions (centered in each lane)
-        string laneNames[4] = {"AL2", "BL2", "CL2", "DL2"};
+        // Center of the window
+        int centerX = WINDOW_WIDTH / 2;
+        int centerY = WINDOW_HEIGHT / 2;
+
+        // Lane spacing
+        int laneSpacing = ROAD_WIDTH / 3;
+
+        // Lane names and positions
         SDL_Color laneColors[4] = {
             {220, 50, 50, 255},    // AL2 - Red
             {50, 220, 50, 255},    // BL2 - Green
@@ -315,36 +365,49 @@ public:
             {220, 220, 50, 255}    // DL2 - Yellow
         };
 
-        // Calculate lane center positions
-        int verticalCenter = WINDOW_WIDTH/2 - ROAD_WIDTH/2 + LANE_WIDTH + LANE_WIDTH/2;  // Middle lane (lane 1)
-        int horizontalCenter = WINDOW_HEIGHT/2 - ROAD_WIDTH/2 + LANE_WIDTH + LANE_WIDTH/2;
-
-        // Draw lane name backgrounds with TTF text
         SDL_Color textColor = {255, 255, 255, 255}; // White text
 
-        // AL2 - Top lane (middle lane of top road)
+        // Calculate positions for each lane (middle lane of each road)
+        // AL2 - Top road, middle lane
+        int al2X = centerX - ROAD_WIDTH / 2 + laneSpacing;
+        int al2Y = centerY - ROAD_WIDTH / 2 - 80; // Above the road
+
+        // BL2 - Right road, middle lane
+        int bl2X = centerX + ROAD_WIDTH / 2 + 50; // Right of the road
+        int bl2Y = centerY - ROAD_WIDTH / 2 + laneSpacing;
+
+        // CL2 - Bottom road, middle lane
+        int cl2X = centerX - ROAD_WIDTH / 2 + laneSpacing;
+        int cl2Y = centerY + ROAD_WIDTH / 2 + 30; // Below the road
+
+        // DL2 - Left road, middle lane
+        int dl2X = centerX - ROAD_WIDTH / 2 - 80; // Left of the road
+        int dl2Y = centerY - ROAD_WIDTH / 2 + laneSpacing;
+
+        // Draw lane labels with backgrounds
+        // AL2
         SDL_SetRenderDrawColor(renderer, laneColors[0].r, laneColors[0].g, laneColors[0].b, 200);
-        SDL_Rect al2Bg = {verticalCenter - 30, 80, 60, 30};
+        SDL_Rect al2Bg = {al2X - 25, al2Y, 50, 30};
         SDL_RenderFillRect(renderer, &al2Bg);
-        renderTextCentered("AL2", verticalCenter, 85, textColor);
+        renderTextCentered("AL2", al2X, al2Y + 5, textColor);
 
-        // BL2 - Right lane (middle lane of right road)
+        // BL2
         SDL_SetRenderDrawColor(renderer, laneColors[1].r, laneColors[1].g, laneColors[1].b, 200);
-        SDL_Rect bl2Bg = {WINDOW_WIDTH - 110, horizontalCenter - 15, 60, 30};
+        SDL_Rect bl2Bg = {bl2X, bl2Y - 15, 50, 30};
         SDL_RenderFillRect(renderer, &bl2Bg);
-        renderTextCentered("BL2", WINDOW_WIDTH - 80, horizontalCenter - 10, textColor);
+        renderTextCentered("BL2", bl2X + 25, bl2Y - 10, textColor);
 
-        // CL3 - Bottom lane (middle lane of bottom road)
+        // CL2
         SDL_SetRenderDrawColor(renderer, laneColors[2].r, laneColors[2].g, laneColors[2].b, 200);
-        SDL_Rect cl2Bg = {verticalCenter - 30, WINDOW_HEIGHT - 110, 60, 30};
+        SDL_Rect cl2Bg = {cl2X - 25, cl2Y, 50, 30};
         SDL_RenderFillRect(renderer, &cl2Bg);
-        renderTextCentered("CL2", verticalCenter, WINDOW_HEIGHT - 105, textColor);
+        renderTextCentered("CL2", cl2X, cl2Y + 5, textColor);
 
-        // DL4 - Left lane (middle lane of left road)
+        // DL2
         SDL_SetRenderDrawColor(renderer, laneColors[3].r, laneColors[3].g, laneColors[3].b, 200);
-        SDL_Rect dl2Bg = {50, horizontalCenter - 15, 60, 30};
+        SDL_Rect dl2Bg = {dl2X, dl2Y - 15, 50, 30};
         SDL_RenderFillRect(renderer, &dl2Bg);
-        renderTextCentered("DL2", 80, horizontalCenter - 10, textColor);
+        renderTextCentered("DL2", dl2X + 25, dl2Y - 10, textColor);
 
         // Draw black borders
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -363,8 +426,8 @@ public:
         SDL_Color laneColors[4] = {
             {255, 100, 100, 255},  // AL2 - Red
             {100, 255, 100, 255},  // BL2 - Green
-            {100, 100, 255, 255},  // CL3 - Blue
-            {255, 255, 100, 255}   // DL4 - Yellow
+            {100, 100, 255, 255},  // CL2 - Blue (was CL3)
+            {255, 255, 100, 255}   // DL2 - Yellow (was DL4)
         };
 
         // Draw vehicles in each lane (centered)
