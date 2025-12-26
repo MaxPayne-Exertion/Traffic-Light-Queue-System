@@ -21,9 +21,16 @@ current status of render:
 
 
 
+
+
 all files have been edited to fit the final goal of the simulation:
 addition of priority queue and fixing the parameters of vehicle class
 a basic rundown of the simulator that works on the terminal
 addition of spawntime in the traffic generator
 
 the window generator will be merged in the simulator
+
+
+current viewing of the simulation:
+
+https://github.com/user-attachments/assets/a192e484-3f72-4e56-88f4-54efcd1fc559
