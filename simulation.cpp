@@ -455,7 +455,7 @@ public:
             int total = 0, count = 0;
             if (laneA->priority == 0) { total += laneA->getVehicleCount(); count++; }
             if (laneB->priority == 0) { total += laneB->getVehicleCount(); count++; }
-            if (laneC->priority == 0) {dividers total += laneC->getVehicleCount(); count++; }
+            if (laneC->priority == 0) {total += laneC->getVehicleCount(); count++; }
             if (laneD->priority == 0) { total += laneD->getVehicleCount(); count++; }
             vehiclesToProcess = count > 0 ? (total / count) : 1;
             if (vehiclesToProcess > lane->getVehicleCount()) {
