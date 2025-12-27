@@ -1,52 +1,59 @@
+#include <iostream>
 #include <fstream>
-#include <thread>
-#include <chrono>
-#include <cstdlib>
+#include <random>
+#include <string>
 #include <ctime>
+#include <chrono>
+#include <thread>
 
-std::string idgen(){
-    const std::string charset =
-           "0123456789"
-           "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    std::string idval;
+// Function to generate random alphanumeric vehicle ID
+std::string generateVehicleID() {
+    static const char alphanum[] =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
 
-    for (int i = 0; i <=8; ++i) {
-        // Generate a random index within the bounds of the CHARACTERS string
-        int random_index = rand() % charset.length();
-        // Append the character at the random index to the result string
-        idval+= charset[random_index];
+    std::string id;
+    for (int i = 0; i < 8; ++i) {
+        id += alphanum[rand() % (sizeof(alphanum) - 1)];
     }
-
-    return idval;
+    return id;
 }
 
 int main() {
-    srand(time(0));
-    const char* files[] = {"laneA.txt", "laneB.txt", "laneC.txt", "laneD.txt"};
+    srand(time(nullptr));
 
+    // Lane files
+    std::string laneFiles[] = {"lanea.txt", "laneb.txt", "lanec.txt", "laned.txt"};
+    std::string laneNames[] = {"AL2", "BL2", "CL2", "DL2"};
 
-       while (true) {
-           // Pick random file (0, 1, 2, or 3)
-           int random_index = rand() % 4;  // rand() % 4 gives 0, 1, 2, or 3
-           const char* filename = files[random_index];
-           std::string vehicle_id = idgen();
-           auto now = std::chrono::system_clock::now();
-           auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
-           auto value = now_ms.time_since_epoch();
-           long spawn_time = value.count();
+    int vehicleCount = 0;
 
-           // Open and write to the file
-           std::ofstream file(filename, std::ios::app);
-           if (file.is_open()) {
-               file <<vehicle_id<<" "<<spawn_time<< "\n";
-               file.close();
-           }
+    // Run for a specified time or indefinitely
+    for (int i = 0; i < 100; ++i) {  // Generate 100 vehicles
+        int delay = 1 + rand() % 1;
+        std::this_thread::sleep_for(std::chrono::seconds(delay));
 
-           // Random delay between 300-1500ms
-           int delay = 300 + (rand() % 1200);
-           std::this_thread::sleep_for(std::chrono::milliseconds(delay));
-       }
+        // Select random lane
+        int laneIndex = rand() % 4;
 
-       return 0;
-   }
+        // Generate vehicle
+        std::string vehicleID = generateVehicleID();
+        time_t currentTime = time(nullptr);
 
+        // Write to lane file
+        std::ofstream outFile(laneFiles[laneIndex], std::ios::app);
+        if (outFile.is_open()) {
+            outFile << vehicleID << "," << currentTime << "," << laneNames[laneIndex] << std::endl;
+            outFile.close();
+
+            vehicleCount++;
+            std::cout << "Vehicle " << vehicleID << " generated on " << laneNames[laneIndex]
+                      << " (Total: " << vehicleCount << ")" << std::endl;
+        } else {
+            std::cerr << "Error: Could not open file " << laneFiles[laneIndex] << std::endl;
+        }
+    }
+
+    return 0;
+}
