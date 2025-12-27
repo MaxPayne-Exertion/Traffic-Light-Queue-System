@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <cmath>
 #include "queue.h"
 
 const int WINDOW_WIDTH = 800;
@@ -15,28 +14,54 @@ const int WINDOW_HEIGHT = 800;
 const int LANE_WIDTH = 50;
 const int VEHICLE_WIDTH = 45;
 const int VEHICLE_HEIGHT = 35;
-const int ROAD_LENGTH = 400;
 
 enum LightState { RED = 0, GREEN = 1 };
 
 struct AnimatedVehicle {
     std::string id;
     float x, y;
-    float targetX, targetY;
+    float startX, startY;
+    float endX, endY;
+    float progress; // 0.0 to 1.0
     std::string lane;
     bool isMoving;
     SDL_Color color;
     int direction; // 0=right, 1=down, 2=left, 3=up
 
-    AnimatedVehicle(std::string vid, float startX, float startY, std::string vlane, int dir)
-        : id(vid), x(startX), y(startY), targetX(startX), targetY(startY),
-          lane(vlane), isMoving(false), direction(dir) {
+    AnimatedVehicle(std::string vid, float sx, float sy, float ex, float ey,
+                    std::string vlane, int dir)
+        : id(vid), x(sx), y(sy), startX(sx), startY(sy),
+          endX(ex), endY(ey), progress(0.0f), lane(vlane),
+          isMoving(true), direction(dir) {
         color = {
             static_cast<Uint8>(50 + rand() % 156),
             static_cast<Uint8>(50 + rand() % 156),
             static_cast<Uint8>(50 + rand() % 156),
             255
         };
+    }
+
+    void update(float deltaTime) {
+        if (isMoving) {
+            progress += deltaTime * 0.5f; // Speed control
+            if (progress > 1.0f) {
+                progress = 1.0f;
+                isMoving = false;
+            }
+
+            // Linear interpolation for smooth movement
+            x = startX + (endX - startX) * progress;
+            y = startY + (endY - startY) * progress;
+        }
+    }
+
+    bool hasReachedDestination() const {
+        return progress >= 1.0f;
+    }
+
+    bool isOffScreen() const {
+        return x < -100 || x > WINDOW_WIDTH + 100 ||
+               y < -100 || y > WINDOW_HEIGHT + 100;
     }
 };
 
@@ -60,7 +85,6 @@ private:
     std::string currentGreenLane;
 
     int vehiclesProcessed;
-    int timePerVehicle;
     int minVehiclesBeforePriority;
 
     Uint32 lastUpdateTime;
@@ -68,19 +92,24 @@ private:
     Uint32 lastProcessTime;
 
     bool running;
+    bool processingVehicles;
+    std::string processingLane;
+    int vehiclesToProcess;
+    int vehiclesProcessedThisCycle;
+
     // Center coordinates
     int centerX, centerY;
-    int junctionSize;
 
 public:
     TrafficSimulatorSDL() : window(nullptr), renderer(nullptr), font(nullptr),
                             smallFont(nullptr), tinyFont(nullptr), vehiclesProcessed(0),
-                            timePerVehicle(2), minVehiclesBeforePriority(5),
-                            lastUpdateTime(0), lastLoadTime(0), lastProcessTime(0), running(true) {
+                            minVehiclesBeforePriority(5),
+                            lastUpdateTime(0), lastLoadTime(0), lastProcessTime(0),
+                            running(true), processingVehicles(false),
+                            vehiclesToProcess(0), vehiclesProcessedThisCycle(0) {
 
         centerX = WINDOW_WIDTH / 2;
         centerY = WINDOW_HEIGHT / 2;
-        junctionSize = LANE_WIDTH * 6;
 
         if (SDL_Init(SDL_INIT_VIDEO) < 0) {
             std::cerr << "SDL initialization failed: " << SDL_GetError() << std::endl;
@@ -92,7 +121,9 @@ public:
             return;
         }
 
-        window = SDL_CreateWindow("Traffic Light Queue System - SDL2",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,WINDOW_WIDTH, WINDOW_HEIGHT,SDL_WINDOW_SHOWN);
+        window = SDL_CreateWindow("Traffic Simulator",
+                                  SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                  WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
 
         if (!window) {
             std::cerr << "Window creation failed: " << SDL_GetError() << std::endl;
@@ -195,6 +226,7 @@ public:
             SDL_RenderDrawRect(renderer, &borderRect);
         }
     }
+
     void drawRoad() {
         // Colors
         SDL_SetRenderDrawColor(renderer, 70, 70, 70, 255);
@@ -215,45 +247,39 @@ public:
         SDL_Rect junction = {300, 300, 200, 200};
         SDL_RenderFillRect(renderer, &junction);
 
-        // Lane color
-        SDL_SetRenderDrawColor(renderer, 255, 255, 100, 255);
+        // Lane markers
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
         int dash = 12;
         int gap  = 12;
 
-        // TOP ROAD (two vertical dashed lines)
+        // TOP ROAD
         for (int y = 0; y < 300; y += dash + gap) {
             SDL_RenderDrawLine(renderer, 350, y, 350, y + dash);
             SDL_RenderDrawLine(renderer, 450, y, 450, y + dash);
         }
 
         // BOTTOM ROAD
-
         for (int y = 500; y < 800; y += dash + gap) {
             SDL_RenderDrawLine(renderer, 350, y, 350, y + dash);
             SDL_RenderDrawLine(renderer, 450, y, 450, y + dash);
         }
 
-
-        // LEFT ROAD (two horizontal dashed lines)
-
+        // LEFT ROAD
         for (int x = 0; x < 300; x += dash + gap) {
             SDL_RenderDrawLine(renderer, x, 350, x + dash, 350);
             SDL_RenderDrawLine(renderer, x, 450, x + dash, 450);
         }
 
         // RIGHT ROAD
-
         for (int x = 500; x < 800; x += dash + gap) {
             SDL_RenderDrawLine(renderer, x, 350, x + dash, 350);
             SDL_RenderDrawLine(renderer, x, 450, x + dash, 450);
         }
     }
 
-
-
     void drawTrafficLight(int x, int y, LightState state, const std::string& label) {
-        // Traffic light box background
+        // Traffic light box
         SDL_Color boxColor = {50, 50, 50, 255};
         SDL_Rect box = {x, y, 30, 70};
         SDL_SetRenderDrawColor(renderer, boxColor.r, boxColor.g, boxColor.b, boxColor.a);
@@ -288,7 +314,7 @@ public:
 
         SDL_Rect body = {(int)(vehicle.x - w/2), (int)(vehicle.y - h/2), w, h};
 
-        // Vehicle
+        // Vehicle body
         drawRectWithBorder(body, vehicle.color, {0, 0, 0, 255}, 2);
 
         // Vehicle ID
@@ -304,8 +330,8 @@ public:
     void drawLaneInfo() {
         int panelX = 10;
         int panelY = 10;
-        int panelWidth = 150;
-        int panelHeight = 190;
+        int panelWidth = 180;
+        int panelHeight = 180;
 
         // Background
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -326,32 +352,32 @@ public:
 
         int yPos = panelY + 10;
 
-        drawText("TRAFFIC STATUS", panelX + 10, yPos, {255, 255, 100, 255}, smallFont);
+        drawText("Traffic Status", panelX + 10, yPos, {255, 255, 100, 255}, smallFont);
         yPos += 25;
 
-        // Lane A (Priority)
-        std::string aText = "AL2 (L): " + std::to_string(laneA->getVehicleCount());
+        // Lane A
+        std::string aText = "AL2: " + std::to_string(laneA->getVehicleCount());
         if (laneA->priority > 0) aText += " [P]";
         drawText(aText, panelX + 10, yPos, laneA->priority > 0 ? priorityColor : textColor, smallFont);
         yPos += 22;
 
         // Lane B
-        std::string bText = "BL2 (T): " + std::to_string(laneB->getVehicleCount());
+        std::string bText = "BL2: " + std::to_string(laneB->getVehicleCount());
         drawText(bText, panelX + 10, yPos, textColor, smallFont);
         yPos += 22;
 
         // Lane C
-        std::string cText = "CL2 (R): " + std::to_string(laneC->getVehicleCount());
+        std::string cText = "CL2: " + std::to_string(laneC->getVehicleCount());
         drawText(cText, panelX + 10, yPos, textColor, smallFont);
         yPos += 22;
 
         // Lane D
-        std::string dText = "DL2 (B): " + std::to_string(laneD->getVehicleCount());
+        std::string dText = "DL2: " + std::to_string(laneD->getVehicleCount());
         drawText(dText, panelX + 10, yPos, textColor, smallFont);
         yPos += 30;
 
         // Current green
-        std::string greenText = "GREEN: " + (currentGreenLane.empty() ? "NONE" : currentGreenLane);
+        std::string greenText = "Green: " + (currentGreenLane.empty() ? "NONE" : currentGreenLane);
         drawText(greenText, panelX + 10, yPos, greenColor, smallFont);
         yPos += 22;
 
@@ -399,38 +425,51 @@ public:
     void updateAnimations(float deltaTime) {
         for (auto& vehicle : animatedVehicles) {
             if (vehicle.isMoving) {
-                float dx = vehicle.targetX - vehicle.x;
-                float dy = vehicle.targetY - vehicle.y;
-                float distance = sqrt(dx * dx + dy * dy);
-
-                if (distance < 5.0f) {
-                    vehicle.x = vehicle.targetX;
-                    vehicle.y = vehicle.targetY;
-                    vehicle.isMoving = false;
-                } else {
-                    float speed = 250.0f * deltaTime;
-                    vehicle.x += (dx / distance) * speed;
-                    vehicle.y += (dy / distance) * speed;
-                }
+                vehicle.update(deltaTime);
             }
         }
 
-        // Remove vehicles that are off-screen
+        // Clean up vehicles that have exited
         animatedVehicles.erase(
             std::remove_if(animatedVehicles.begin(), animatedVehicles.end(),
                 [](const AnimatedVehicle& v) {
-                    return !v.isMoving &&
-                           (v.x < -100 || v.x > WINDOW_WIDTH + 100 ||
-                            v.y < -100 || v.y > WINDOW_HEIGHT + 100);
+                    return !v.isMoving && v.isOffScreen();
                 }),
             animatedVehicles.end()
         );
+
+        // Check if current processing cycle is complete
+        if (processingVehicles) {
+            bool allVehiclesMoved = true;
+            for (const auto& vehicle : animatedVehicles) {
+                if (vehicle.lane == processingLane && vehicle.isMoving) {
+                    allVehiclesMoved = false;
+                    break;
+                }
+            }
+
+            if (allVehiclesMoved) {
+                // Reset processing state
+                processingVehicles = false;
+                processingLane = "";
+                vehiclesProcessedThisCycle = 0;
+                vehiclesToProcess = 0;
+
+                // Turn off green light
+                setTrafficLight(currentGreenLane, RED);
+                currentGreenLane = "";
+            }
+        }
     }
 
-    void processLane(Lane* lane) {
+    void startProcessingLane(Lane* lane) {
         if (lane->getVehicleCount() == 0) return;
 
-        int vehiclesToProcess;
+        processingLane = lane->name;
+        processingVehicles = true;
+        vehiclesProcessedThisCycle = 0;
+
+        // Calculate how many vehicles to process
         if (lane->priority > 0) {
             vehiclesToProcess = lane->getVehicleCount() - minVehiclesBeforePriority;
             if (vehiclesToProcess < 0) vehiclesToProcess = 0;
@@ -449,51 +488,53 @@ public:
             }
         }
 
+        // Limit max vehicles per cycle
+        if (vehiclesToProcess > 5) vehiclesToProcess = 5;
+
+        // Turn on green light for this lane
         setTrafficLight(lane->name, GREEN);
 
-        int halfJunction = junctionSize / 2;
-
+        // Start moving vehicles
         for (int i = 0; i < vehiclesToProcess && !lane->vehicleQueue->isEmpty(); i++) {
             Vehicle v = lane->vehicleQueue->dequeue();
             vehiclesProcessed++;
+            vehiclesProcessedThisCycle++;
 
             float startX, startY, endX, endY;
             int direction;
 
+            // Set paths for each lane
             if (lane->name == "AL2") {
-                // Left lane
-                startX = 50;
-                startY = centerY - halfJunction + LANE_WIDTH * 1.5;
+                // Left to right
+                startX = -50;
+                startY = centerY - 25;
                 endX = WINDOW_WIDTH + 50;
                 endY = startY;
                 direction = 0; // right
             } else if (lane->name == "BL2") {
-                // Top lane
-                startX = centerX - halfJunction + LANE_WIDTH * 1.5;
-                startY = 50;
+                // Top to bottom
+                startX = centerX - 25;
+                startY = -50;
                 endX = startX;
                 endY = WINDOW_HEIGHT + 50;
                 direction = 1; // down
             } else if (lane->name == "CL2") {
-                // Right lane
-                startX = WINDOW_WIDTH - 50;
-                startY = centerY + halfJunction - LANE_WIDTH * 1.5;
+                // Right to left
+                startX = WINDOW_WIDTH + 50;
+                startY = centerY + 25;
                 endX = -50;
                 endY = startY;
                 direction = 2; // left
             } else { // DL2
-                // Bottom lane
-                startX = centerX + halfJunction - LANE_WIDTH * 1.5;
-                startY = WINDOW_HEIGHT - 50;
+                // Bottom to top
+                startX = centerX + 25;
+                startY = WINDOW_HEIGHT + 50;
                 endX = startX;
                 endY = -50;
                 direction = 3; // up
             }
 
-            AnimatedVehicle av(v.id, startX, startY, lane->name, direction);
-            av.targetX = endX;
-            av.targetY = endY;
-            av.isMoving = true;
+            AnimatedVehicle av(v.id, startX, startY, endX, endY, lane->name, direction);
             animatedVehicles.push_back(av);
         }
     }
@@ -532,8 +573,7 @@ public:
             return;
         }
 
-        std::cout << "SDL2 Traffic Simulator Started" << std::endl;
-        std::cout << "Press ESC to exit" << std::endl;
+        std::cout << "Traffic Simulator Started" << std::endl;
 
         Uint32 lastFrameTime = SDL_GetTicks();
 
@@ -544,14 +584,14 @@ public:
 
             handleEvents();
 
-            // Load vehicles every 2 seconds
-            if (currentTime - lastLoadTime > 1000) {
+            // Load vehicles  
+            if (currentTime - lastLoadTime > 2000) {
                 loadVehiclesFromFiles();
                 lastLoadTime = currentTime;
             }
 
-            // Update priorities every 1 second
-            if (currentTime - lastUpdateTime > 500) {
+            // Update priorities
+            if (currentTime - lastUpdateTime > 1000) {
                 laneA->updatePriority();
                 laneB->updatePriority();
                 laneC->updatePriority();
@@ -560,12 +600,12 @@ public:
                 lastUpdateTime = currentTime;
             }
 
-            // Process lanes every 3 seconds
-            if (currentTime - lastProcessTime > 2000) {
+            // Process lanes automatically every 5 seconds
+            if (!processingVehicles && currentTime - lastProcessTime > 5000) {
                 if (!lanePQ->isEmpty()) {
                     Lane* currentLane = lanePQ->extractMax();
                     if (currentLane->getVehicleCount() > 0) {
-                        processLane(currentLane);
+                        startProcessingLane(currentLane);
                     }
                     lanePQ->insert(currentLane);
                 }
@@ -576,32 +616,23 @@ public:
             updateAnimations(deltaTime);
 
             // Render
-            SDL_SetRenderDrawColor(renderer, 40, 120, 40, 255); // Dark green
+            SDL_SetRenderDrawColor(renderer, 40, 120, 40, 255);
             SDL_RenderClear(renderer);
 
             drawRoad();
 
-            int halfJunction = junctionSize / 2;
-
-            // Draw traffic lights beside their lanes
-            // AL2 - Left side
-            drawTrafficLight(centerX - halfJunction - 60, centerY - 35, trafficLights["AL2"], "AL2");
-
-            // BL2 - Top
-            drawTrafficLight(centerX - 15, centerY - halfJunction - 100, trafficLights["BL2"], "BL2");
-
-            // CL2 - Right side
-            drawTrafficLight(centerX + halfJunction + 30, centerY - 35, trafficLights["CL2"], "CL2");
-
-            // DL2 - Bottom
-            drawTrafficLight(centerX - 15, centerY + halfJunction + 30, trafficLights["DL2"], "DL2");
+            // Draw traffic lights
+            drawTrafficLight(150, centerY - 35, trafficLights["AL2"], "AL2");
+            drawTrafficLight(centerX - 15, 150, trafficLights["BL2"], "BL2");
+            drawTrafficLight(WINDOW_WIDTH - 180, centerY - 35, trafficLights["CL2"], "CL2");
+            drawTrafficLight(centerX - 15, WINDOW_HEIGHT - 220, trafficLights["DL2"], "DL2");
 
             drawAnimatedVehicles();
             drawLaneInfo();
 
             SDL_RenderPresent(renderer);
 
-            SDL_Delay(16); // 60 FPS
+            SDL_Delay(16);
         }
     }
 };
