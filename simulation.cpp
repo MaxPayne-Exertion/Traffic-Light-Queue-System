@@ -10,8 +10,8 @@
 #include <cmath>
 #include "queue.h"
 
-const int WINDOW_WIDTH = 700;
-const int WINDOW_HEIGHT = 700;
+const int WINDOW_WIDTH = 800;
+const int WINDOW_HEIGHT = 800;
 const int LANE_WIDTH = 50;
 const int VEHICLE_WIDTH = 45;
 const int VEHICLE_HEIGHT = 35;
@@ -68,7 +68,6 @@ private:
     Uint32 lastProcessTime;
 
     bool running;
-
     // Center coordinates
     int centerX, centerY;
     int junctionSize;
@@ -93,11 +92,7 @@ public:
             return;
         }
 
-        window = SDL_CreateWindow("Traffic Light Queue System - SDL2",
-                                 SDL_WINDOWPOS_CENTERED,
-                                 SDL_WINDOWPOS_CENTERED,
-                                 WINDOW_WIDTH, WINDOW_HEIGHT,
-                                 SDL_WINDOW_SHOWN);
+        window = SDL_CreateWindow("Traffic Light Queue System - SDL2",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,WINDOW_WIDTH, WINDOW_HEIGHT,SDL_WINDOW_SHOWN);
 
         if (!window) {
             std::cerr << "Window creation failed: " << SDL_GetError() << std::endl;
@@ -111,9 +106,9 @@ public:
             return;
         }
 
-        font = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 20);
-        smallFont = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16);
-        tinyFont = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 12);
+        font = TTF_OpenFont("/usr/share/fonts/TTF/DejaVuSans.ttf", 20);
+        smallFont = TTF_OpenFont("/usr/share/fonts/TTF/DejaVuSans.ttf", 16);
+        tinyFont = TTF_OpenFont("/usr/share/fonts/TTF/DejaVuSans.ttf", 12);
 
         if (!font) {
             font = TTF_OpenFont("/System/Library/Fonts/Helvetica.ttc", 20);
@@ -200,73 +195,62 @@ public:
             SDL_RenderDrawRect(renderer, &borderRect);
         }
     }
-
     void drawRoad() {
-        SDL_Color roadColor = {70, 70, 70, 255};
-        SDL_Color laneLineColor = {255, 255, 100, 255};
+        // Colors
+        SDL_SetRenderDrawColor(renderer, 70, 70, 70, 255);
 
-        int halfJunction = junctionSize / 2;
-
-        // Horizontal roads (left and right of junction)
-        SDL_Rect leftRoad = {0, centerY - halfJunction, centerX - halfJunction, junctionSize};
-        SDL_Rect rightRoad = {centerX + halfJunction, centerY - halfJunction, WINDOW_WIDTH - (centerX + halfJunction), junctionSize};
-
-        SDL_SetRenderDrawColor(renderer, roadColor.r, roadColor.g, roadColor.b, roadColor.a);
-        SDL_RenderFillRect(renderer, &leftRoad);
-        SDL_RenderFillRect(renderer, &rightRoad);
-
-        // Vertical roads (top and bottom of junction)
-        SDL_Rect topRoad = {centerX - halfJunction, 0, junctionSize, centerY - halfJunction};
-        SDL_Rect bottomRoad = {centerX - halfJunction, centerY + halfJunction, junctionSize, WINDOW_HEIGHT - (centerY + halfJunction)};
+        // Road rectangles
+        SDL_Rect topRoad    = {300,   0, 200, 300};
+        SDL_Rect bottomRoad = {300, 500, 200, 300};
+        SDL_Rect leftRoad   = {  0, 300, 300, 200};
+        SDL_Rect rightRoad  = {500, 300, 300, 200};
 
         SDL_RenderFillRect(renderer, &topRoad);
         SDL_RenderFillRect(renderer, &bottomRoad);
+        SDL_RenderFillRect(renderer, &leftRoad);
+        SDL_RenderFillRect(renderer, &rightRoad);
 
-        // Junction center
-        SDL_Color junctionColor = {80, 80, 80, 255};
-        SDL_Rect junction = {centerX - halfJunction, centerY - halfJunction, junctionSize, junctionSize};
-        SDL_SetRenderDrawColor(renderer, junctionColor.r, junctionColor.g, junctionColor.b, junctionColor.a);
+        // Junction
+        SDL_SetRenderDrawColor(renderer, 85, 85, 85, 255);
+        SDL_Rect junction = {300, 300, 200, 200};
         SDL_RenderFillRect(renderer, &junction);
 
-        // Draw lane dividers
-        SDL_SetRenderDrawColor(renderer, laneLineColor.r, laneLineColor.g, laneLineColor.b, laneLineColor.a);
+        // Lane color
+        SDL_SetRenderDrawColor(renderer, 255, 255, 100, 255);
 
-        // Horizontal lane lines (left road)
-        for (int i = 1; i < 3; i++) {
-            int y = centerY - halfJunction + i * LANE_WIDTH;
-            for (int x = 0; x < centerX - halfJunction; x += 30) {
-                SDL_Rect dash = {x, y - 1, 15, 2};
-                SDL_RenderFillRect(renderer, &dash);
-            }
+        int dash = 12;
+        int gap  = 12;
+
+        // TOP ROAD (two vertical dashed lines)
+        for (int y = 0; y < 300; y += dash + gap) {
+            SDL_RenderDrawLine(renderer, 350, y, 350, y + dash);
+            SDL_RenderDrawLine(renderer, 450, y, 450, y + dash);
         }
 
-        // Horizontal lane lines (right road)
-        for (int i = 1; i < 3; i++) {
-            int y = centerY - halfJunction + i * LANE_WIDTH;
-            for (int x = centerX + halfJunction; x < WINDOW_WIDTH; x += 30) {
-                SDL_Rect dash = {x, y - 1, 15, 2};
-                SDL_RenderFillRect(renderer, &dash);
-            }
+        // BOTTOM ROAD
+
+        for (int y = 500; y < 800; y += dash + gap) {
+            SDL_RenderDrawLine(renderer, 350, y, 350, y + dash);
+            SDL_RenderDrawLine(renderer, 450, y, 450, y + dash);
         }
 
-        // Vertical lane lines (top road)
-        for (int i = 1; i < 3; i++) {
-            int x = centerX - halfJunction + i * LANE_WIDTH;
-            for (int y = 0; y < centerY - halfJunction; y += 30) {
-                SDL_Rect dash = {x - 1, y, 2, 15};
-                SDL_RenderFillRect(renderer, &dash);
-            }
+
+        // LEFT ROAD (two horizontal dashed lines)
+
+        for (int x = 0; x < 300; x += dash + gap) {
+            SDL_RenderDrawLine(renderer, x, 350, x + dash, 350);
+            SDL_RenderDrawLine(renderer, x, 450, x + dash, 450);
         }
 
-        // Vertical lane lines (bottom road)
-        for (int i = 1; i < 3; i++) {
-            int x = centerX - halfJunction + i * LANE_WIDTH;
-            for (int y = centerY + halfJunction; y < WINDOW_HEIGHT; y += 30) {
-                SDL_Rect dash = {x - 1, y, 2, 15};
-                SDL_RenderFillRect(renderer, &dash);
-            }
+        // RIGHT ROAD
+
+        for (int x = 500; x < 800; x += dash + gap) {
+            SDL_RenderDrawLine(renderer, x, 350, x + dash, 350);
+            SDL_RenderDrawLine(renderer, x, 450, x + dash, 450);
         }
     }
+
+
 
     void drawTrafficLight(int x, int y, LightState state, const std::string& label) {
         // Traffic light box background
@@ -298,14 +282,13 @@ public:
         int w = VEHICLE_WIDTH;
         int h = VEHICLE_HEIGHT;
 
-        // Adjust size based on direction (vertical vs horizontal)
         if (vehicle.direction == 1 || vehicle.direction == 3) { // Up or down
             std::swap(w, h);
         }
 
         SDL_Rect body = {(int)(vehicle.x - w/2), (int)(vehicle.y - h/2), w, h};
 
-        // Vehicle body
+        // Vehicle
         drawRectWithBorder(body, vehicle.color, {0, 0, 0, 255}, 2);
 
         // Vehicle ID
@@ -319,10 +302,10 @@ public:
     }
 
     void drawLaneInfo() {
-        int panelX = 20;
-        int panelY = 20;
-        int panelWidth = 250;
-        int panelHeight = 200;
+        int panelX = 10;
+        int panelY = 10;
+        int panelWidth = 150;
+        int panelHeight = 190;
 
         // Background
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -455,7 +438,7 @@ public:
             int total = 0, count = 0;
             if (laneA->priority == 0) { total += laneA->getVehicleCount(); count++; }
             if (laneB->priority == 0) { total += laneB->getVehicleCount(); count++; }
-            if (laneC->priority == 0) {total += laneC->getVehicleCount(); count++; }
+            if (laneC->priority == 0) { total += laneC->getVehicleCount(); count++; }
             if (laneD->priority == 0) { total += laneD->getVehicleCount(); count++; }
             vehiclesToProcess = count > 0 ? (total / count) : 1;
             if (vehiclesToProcess > lane->getVehicleCount()) {
@@ -478,28 +461,28 @@ public:
             int direction;
 
             if (lane->name == "AL2") {
-                // Left lane - vehicles enter from left, exit right
+                // Left lane
                 startX = 50;
                 startY = centerY - halfJunction + LANE_WIDTH * 1.5;
                 endX = WINDOW_WIDTH + 50;
                 endY = startY;
                 direction = 0; // right
             } else if (lane->name == "BL2") {
-                // Top lane - vehicles enter from top, exit bottom
+                // Top lane
                 startX = centerX - halfJunction + LANE_WIDTH * 1.5;
                 startY = 50;
                 endX = startX;
                 endY = WINDOW_HEIGHT + 50;
                 direction = 1; // down
             } else if (lane->name == "CL2") {
-                // Right lane - vehicles enter from right, exit left
+                // Right lane
                 startX = WINDOW_WIDTH - 50;
                 startY = centerY + halfJunction - LANE_WIDTH * 1.5;
                 endX = -50;
                 endY = startY;
                 direction = 2; // left
             } else { // DL2
-                // Bottom lane - vehicles enter from bottom, exit top
+                // Bottom lane
                 startX = centerX + halfJunction - LANE_WIDTH * 1.5;
                 startY = WINDOW_HEIGHT - 50;
                 endX = startX;
@@ -562,13 +545,13 @@ public:
             handleEvents();
 
             // Load vehicles every 2 seconds
-            if (currentTime - lastLoadTime > 2000) {
+            if (currentTime - lastLoadTime > 1000) {
                 loadVehiclesFromFiles();
                 lastLoadTime = currentTime;
             }
 
             // Update priorities every 1 second
-            if (currentTime - lastUpdateTime > 1000) {
+            if (currentTime - lastUpdateTime > 500) {
                 laneA->updatePriority();
                 laneB->updatePriority();
                 laneC->updatePriority();
@@ -578,7 +561,7 @@ public:
             }
 
             // Process lanes every 3 seconds
-            if (currentTime - lastProcessTime > 3000) {
+            if (currentTime - lastProcessTime > 2000) {
                 if (!lanePQ->isEmpty()) {
                     Lane* currentLane = lanePQ->extractMax();
                     if (currentLane->getVehicleCount() > 0) {
@@ -593,7 +576,7 @@ public:
             updateAnimations(deltaTime);
 
             // Render
-            SDL_SetRenderDrawColor(renderer, 40, 120, 40, 255); // Dark green grass
+            SDL_SetRenderDrawColor(renderer, 40, 120, 40, 255); // Dark green
             SDL_RenderClear(renderer);
 
             drawRoad();
@@ -618,7 +601,7 @@ public:
 
             SDL_RenderPresent(renderer);
 
-            SDL_Delay(16); // ~60 FPS
+            SDL_Delay(16); // 60 FPS
         }
     }
 };
