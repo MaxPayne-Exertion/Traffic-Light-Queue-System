@@ -3,8 +3,6 @@
 [![SDL2](https://img.shields.io/badge/Graphics-SDL2-green.svg)](https://www.libsdl.org/)
 
 
-<img width="813" height="857" alt="image" src="https://github.com/user-attachments/assets/a50d0bbb-c3e3-4489-a9be-4704d77c2808" />
-
 # TRAFFIC LIGHT QUEUE SYSTEM
 ## Implementation of Traffic Junction Management Using Queue Data Structures
 
@@ -630,7 +628,7 @@ K7n2Pw4S,1735301237,BL2
 
 **Expected:** Stable memory, consistent performance, no crashes
 
-**Result:** ✅ PASS
+**Result:**  PASS
 - Memory stable at ~15 MB
 - Frame rate consistent
 - No memory leaks (valgrind verified)
