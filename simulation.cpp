@@ -7,7 +7,6 @@
 #include <ctime>
 #include <algorithm>
 
-// Include your existing header
 #include "queue.h"
 
 
@@ -268,7 +267,6 @@ void render() {
         drawRect(280, y, 20, 10, 255, 255, 255); // Left
         drawRect(500, y, 20, 10, 255, 255, 255); // Right
     }
-
     // 5. Intersection Box (Darker)
     drawRect(300, 300, 200, 200, 40, 40, 40);
 
@@ -343,6 +341,7 @@ void render() {
 
     SDL_RenderPresent(renderer);
 }
+
 
 
 int main(int argc, char* args[]) {
